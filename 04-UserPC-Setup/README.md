@@ -31,32 +31,42 @@ Source: Create3 / ROS2 install guidance. :contentReference[oaicite:8]{index=8}
 When robots and compute boards use multiple network interfaces (here `usb0` and `wlan0`), CycloneDDS can be configured to listen on only those interfaces. This avoids discovery problems and works well in our Pi + Create3 + PC setup.
 
 ### File we created (exact path)
-- `/home/<your_user>/cyclonedds/cyclonedds.xml`  (or pick `/etc/cyclonedds/cyclonedds.xml` for systemwide)
 
-We used this content (exact):
+On the User PC we created the file:  **/etc/turtlebot4/cyclonedds_pc.xml**
 
 ```
-<?xml version="1.0" encoding="UTF-8"?>
 <CycloneDDS>
   <Domain>
     <General>
-      <!-- Use the two interfaces active in our setup -->
-      <NetworkInterfaceAddress>usb0,wlan0</NetworkInterfaceAddress>
-      <!-- For CycloneDDS versions like 0.8.1, DontRoute=true helps discovery on laptops -->
-      <DontRoute>true</DontRoute>
+      <NetworkInterfaceAddress>wlo1</NetworkInterfaceAddress>
+      <AllowMulticast>true</AllowMulticast>
     </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+    </Discovery>
   </Domain>
 </CycloneDDS>
 ```
 
-**Notes:**
-- If your CycloneDDS supports the `Interfaces` tag (newer versions), an alternate form is:
-  ` <Interfaces>`
-  `   <NetworkInterface name="usb0" />`
-  `   <NetworkInterface name="wlan0" />`
-  ` </Interfaces>`
+**Why these choices?**  
+- `NetworkInterfaceAddress=wlo1` ensures DDS binds to the Wi-Fi card (subnet `192.168.12.0/24`).  
+- Multicast enabled so automatic peer discovery works with Pi + Create3.  
+- No static peers needed — all devices are on the same subnet.  
 
-### Set environment variable to load the config
+---
+
+## 2) Environment setup
+We sourced the following environment file:  
+
+**/etc/turtlebot4/setup.bash**
+
+```
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=0
+export CYCLONEDDS_URI=/etc/turtlebot4/cyclonedds_pc.xml
+```
+
+Set environment variable to load the config
 - `export CYCLONEDDS_URI=file:///home/<your_user>/cyclonedds/cyclonedds.xml`
 - To persist: `echo "export CYCLONEDDS_URI=file:///home/<your_user>/cyclonedds/cyclonedds.xml" >> ~/.bashrc`
 
